@@ -14,7 +14,7 @@ LangGraph state machine: planner -> retriever (RAG) -> analyzer -> critic/fact-c
 - Retrieval: dense (local `BAAI/bge-small-en-v1.5` embeddings, 384-dim) + BM25 (sparse), fused with reciprocal rank fusion, then a cross-encoder reranker
 - Agent orchestration: LangGraph
 - Serving: FastAPI, containerized with Docker
-- LLM for agent nodes and the eval judge: Google Gemini API, free tier (e.g. `gemini-2.0-flash` for the agent, a different Gemini model for the judge). Model names come from env; the API key (`GOOGLE_API_KEY`) stays in env and is never hardcoded.
+- LLM for agent nodes and the eval judge: Google Gemini API, free tier (`gemini-2.5-flash` for the agent, a different Gemini model for the judge — `gemini-2.0-flash` had a 0 free-tier quota on this project). Model names come from env; the API key (`GOOGLE_API_KEY`) stays in env and is never hardcoded.
 - Embeddings are pluggable via `EMBEDDING_PROVIDER` (`local` default — free, no rate limits, embeds the full corpus; `gemini` and `openai` reachable as fallbacks). Gemini's free tier is too rate-limited for bulk embedding, so the full ~28K-chunk index uses the local model.
 
 ## Conventions

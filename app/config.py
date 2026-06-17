@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     gemini_embedding_model: str = "gemini-embedding-001"
     # Native dim is 3072; we truncate (Matryoshka) to keep vectors small.
     gemini_output_dim: int = 768
+    # Agent + judge chat models. Judge MUST differ from agent (anti self-grading).
+    # (gemini-2.0-flash had a 0 free-tier quota on this project; 2.5-flash works.)
+    gemini_agent_model: str = "gemini-2.5-flash"
+    gemini_judge_model: str = "gemini-2.5-pro"
 
     # OpenAI — reachable via EMBEDDING_PROVIDER=openai. Judge MUST differ from
     # agent (anti self-grading bias).
