@@ -50,6 +50,24 @@ def dense_search(query_text: str, k: int = 10, settings: Settings | None = None)
     ]
 
 
+def bm25_search(query_text: str, k: int = 10, settings: Settings | None = None) -> list[Hit]:
+    """Sparse BM25-only retrieval (the sparse ablation arm)."""
+    from app.sparse import get_sparse_index
+
+    settings = settings or get_settings()
+    sparse = get_sparse_index(settings)
+    hits: list[Hit] = []
+    for cid, score in sparse.search(query_text, k):
+        row = sparse.rows.get(cid)
+        if row is not None:
+            hits.append(Hit(
+                id=row["id"], posting_id=row["posting_id"], company=row["company"],
+                title=row["title"], section=row["section"], url=row["url"],
+                score=score, content=row["content"],
+            ))
+    return hits
+
+
 def rrf_fuse(rankings: list[list[str]], rrf_k: int = 60) -> list[tuple[str, float]]:
     """Reciprocal rank fusion of several ranked id lists.
 

@@ -1,0 +1,22 @@
+Priya Nair — Data Analyst
+New York, NY
+
+SUMMARY
+Data analyst with 4 years turning product and business data into decisions.
+Strong SQL, experimentation (A/B testing), and dashboarding.
+
+EXPERIENCE
+Data Analyst, Marketplace Co (2021–present)
+- Built self-serve dashboards (Looker, dbt) used by 200+ stakeholders.
+- Designed and analyzed A/B tests for growth and pricing experiments.
+- Wrote complex SQL over a Postgres/warehouse to size opportunities.
+
+Business Analyst, Retail Inc (2019–2021)
+- Forecasting and cohort/retention analysis; Python (pandas) for ad hoc work.
+
+SKILLS
+SQL, Python, pandas, dbt, Looker/Tableau, experimentation, statistics,
+data modeling, A/B testing, analytics.
+
+EDUCATION
+B.A. Economics
