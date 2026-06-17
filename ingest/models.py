@@ -18,3 +18,18 @@ class RawPosting(BaseModel):
     description: str = Field(..., description="Plain-text job description (HTML stripped)")
     url: str
     scraped_at: str = Field(..., description="ISO-8601 UTC timestamp")
+
+
+class Chunk(BaseModel):
+    """A retrievable slice of a posting, tagged with its section."""
+
+    id: str = Field(..., description="'<posting_id>#<chunk_index>'")
+    posting_id: str
+    source: str
+    company: str
+    title: str
+    location: str | None = None
+    url: str = ""
+    section: str = Field(..., description="responsibilities|requirements|qualifications|summary|other")
+    chunk_index: int
+    content: str

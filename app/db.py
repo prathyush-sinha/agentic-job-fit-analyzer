@@ -14,6 +14,11 @@ from pgvector.psycopg import register_vector
 from app.config import Settings, get_settings
 
 
+def to_vector_literal(embedding: list[float]) -> str:
+    """Render an embedding as a pgvector text literal, e.g. '[0.1,0.2]'."""
+    return "[" + ",".join(f"{x:.8f}" for x in embedding) + "]"
+
+
 def get_connection(settings: Settings | None = None) -> psycopg.Connection:
     """Open a psycopg connection with pgvector types registered."""
     settings = settings or get_settings()

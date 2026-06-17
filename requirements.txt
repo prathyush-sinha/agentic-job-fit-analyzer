@@ -2,8 +2,9 @@
 langgraph
 langchain-core
 
-# LLM + embeddings (OpenAI for agent and judge)
-openai
+# LLM + embeddings
+openai                 # reachable via EMBEDDING_PROVIDER=openai (kept as fallback)
+google-genai           # default provider: Gemini free tier (embeddings + chat)
 
 # Structured outputs / config
 pydantic

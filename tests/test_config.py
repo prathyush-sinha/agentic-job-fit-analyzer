@@ -18,3 +18,13 @@ def test_redacted_database_url_unset():
 def test_judge_model_differs_from_agent_by_default():
     s = Settings()
     assert s.openai_judge_model != s.openai_agent_model
+
+
+def test_embedding_provider_selects_model_and_dim():
+    gemini = Settings(embedding_provider="gemini")
+    assert gemini.embedding_model == "gemini-embedding-001"
+    assert gemini.embedding_dim == 768  # truncated from native 3072
+
+    openai = Settings(embedding_provider="openai")
+    assert openai.embedding_model == "text-embedding-3-small"
+    assert openai.embedding_dim == 1536

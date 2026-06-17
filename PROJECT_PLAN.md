@@ -12,12 +12,12 @@ Time estimates assume part-time solo work (evenings/weekends). Total: ~3–4 wee
 - [ ] Create repo, Python venv, `requirements.txt`, `.gitignore` (exclude `.env`).
 - [ ] Drop in `CLAUDE.md` (provided separately) so Claude Code has project context.
 - [ ] Spin up Postgres + pgvector locally (Docker) — reuse your existing setup.
-- [ ] Put API keys in `.env`; never commit them. LLM provider for the agent and judge: **OpenAI** (set `OPENAI_API_KEY`).
+- [ ] Put API keys in `.env`; never commit them. LLM provider for the agent and judge: **Google Gemini**, free tier (set `GOOGLE_API_KEY`). Provider is pluggable via `EMBEDDING_PROVIDER` (`openai` reachable as fallback).
 - [ ] Acquire a job-postings corpus: a public dataset (e.g. a Kaggle job-postings set) or scrape a few thousand. Aim for ~3–5K postings with title, company, description.
 
 ### Phase 1 — RAG baseline (dense only) · ~2–3 days
 - [ ] Ingest postings → clean → chunk (by section: requirements / responsibilities / qualifications).
-- [ ] Embed chunks (OpenAI embeddings, e.g. text-embedding-3-small), store in pgvector.
+- [ ] Embed chunks (Gemini embeddings, `gemini-embedding-001` truncated to 768-dim), store in pgvector. Note: Gemini's free tier is rate-limited (~100 req/min, ~1k/day), so the index is built over a diversified subset of the corpus, not all ~28K chunks.
 - [ ] Dense retrieval: embed a resume, cosine top-k over chunks.
 - [ ] Sanity-check retrieval manually on 5–10 resumes. **Commit.** This is your baseline.
 
@@ -96,7 +96,7 @@ Do not reward fluent writing that lacks grounding.
 ### Judge validation
 Hand-score ~30 outputs yourself on the same scale, then compute Cohen's κ between your scores and the judge's per dimension. Report κ in the README. An unvalidated LLM judge is just another unmeasured model — saying so, and then measuring it, is the senior signal.
 
-Since you're using OpenAI for both the agent and the judge, use a *different* OpenAI model for the judge than the one that generated the output (e.g. generate with gpt-4o-mini, judge with gpt-4o). A model grading its own family's output tends to score it generously; using a separate model plus the human-κ check is your defense against that bias — and being able to explain this tradeoff is itself an interview-worthy point.
+Since you're using Gemini for both the agent and the judge, use a *different* Gemini model for the judge than the one that generated the output (e.g. generate with `gemini-2.0-flash`, judge with `gemini-2.5-pro`). A model grading its own family's output tends to score it generously; using a separate model plus the human-κ check is your defense against that bias — and being able to explain this tradeoff is itself an interview-worthy point.
 
 ---
 

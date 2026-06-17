@@ -1,0 +1,24 @@
+Jordan Lee — Machine Learning Engineer
+San Francisco, CA
+
+SUMMARY
+ML engineer with 5 years building and deploying retrieval and NLP systems in
+production. Strong in Python, vector search, and LLM application development.
+
+EXPERIENCE
+Senior ML Engineer, DataCorp (2021–present)
+- Built a hybrid retrieval system (dense embeddings + BM25, reciprocal rank
+  fusion, cross-encoder reranking) serving 2M queries/day; lifted NDCG@10 by 22%.
+- Deployed LLM-powered features on FastAPI + Kubernetes; owned services end to end.
+- Designed an offline eval harness (precision@k, NDCG, LLM-as-judge) for ranking changes.
+
+ML Engineer, Startup Inc (2019–2021)
+- Trained and fine-tuned transformer models (PyTorch) for text classification.
+- Built data pipelines over Postgres and pgvector for semantic search.
+
+SKILLS
+Python, PyTorch, SQL, Postgres/pgvector, FastAPI, Docker, LangChain, RAG,
+embeddings, information retrieval, evaluation, AWS.
+
+EDUCATION
+B.S. Computer Science

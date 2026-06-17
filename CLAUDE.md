@@ -10,11 +10,12 @@ LangGraph state machine: planner -> retriever (RAG) -> analyzer -> critic/fact-c
 
 ## Stack
 - Python 3.11+
-- Postgres + pgvector for the vector store
-- Retrieval: dense (OpenAI embeddings, e.g. text-embedding-3-small) + BM25 (sparse), fused with reciprocal rank fusion, then a cross-encoder reranker
+- Postgres + pgvector for the vector store (hosted free Neon instance; `docker compose` config also provided)
+- Retrieval: dense (Gemini embeddings, `gemini-embedding-001` truncated to 768-dim) + BM25 (sparse), fused with reciprocal rank fusion, then a cross-encoder reranker
 - Agent orchestration: LangGraph
 - Serving: FastAPI, containerized with Docker
-- LLM for agent nodes and the eval judge: OpenAI API (e.g. gpt-4o for the agent, a different OpenAI model for the judge). Model names come from env; the API key stays in env and is never hardcoded.
+- LLM for agent nodes and the eval judge: Google Gemini API, free tier (e.g. `gemini-2.0-flash` for the agent, a different Gemini model for the judge). Model names come from env; the API key (`GOOGLE_API_KEY`) stays in env and is never hardcoded.
+- Provider is pluggable via `EMBEDDING_PROVIDER` (`gemini` default; `openai` reachable as a fallback). Gemini's free tier is rate-limited (~100 req/min, ~1k/day for embeddings), so the index is built over a diversified subset of the corpus.
 
 ## Conventions
 - Keep dense-only retrieval reachable behind a flag — it is the ablation baseline. Do not delete it.
@@ -27,7 +28,7 @@ LangGraph state machine: planner -> retriever (RAG) -> analyzer -> critic/fact-c
 - Retrieval metrics: precision@k, recall@k, NDCG@k, MRR against the labeled gold set in `evals/gold/`.
 - Generation metrics: an LLM-as-judge scoring faithfulness, relevance, actionability (rubric in `evals/RUBRIC.md`).
 - The judge is itself validated against human labels (Cohen's kappa). Do not treat judge scores as ground truth without that validation.
-- Use a different OpenAI model for the judge than for the agent (e.g. agent = gpt-4o-mini, judge = gpt-4o). Same-model self-grading inflates scores; the human-kappa validation is what keeps the judge honest.
+- Use a different Gemini model for the judge than for the agent (e.g. agent = `gemini-2.0-flash`, judge = `gemini-2.5-pro`). Same-model self-grading inflates scores; the human-kappa validation is what keeps the judge honest.
 - Log tokens, cost-per-run, and p50/p95 latency on every run.
 
 ## Hard rules
