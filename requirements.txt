@@ -15,6 +15,10 @@ python-dotenv
 psycopg[binary]
 pgvector
 
+# Hybrid retrieval (Phase 2)
+rank-bm25              # sparse BM25 retrieval
+sentence-transformers  # cross-encoder reranker (pulls torch, CPU)
+
 # Serving
 fastapi
 uvicorn[standard]
@@ -22,7 +26,3 @@ uvicorn[standard]
 # Testing
 pytest
 httpx  # required by fastapi TestClient
-
-# Deferred to their phases (add when implemented):
-#   Phase 2 sparse retrieval: rank-bm25
-#   Phase 2 reranker (heavyweight — confirm first): sentence-transformers / torch

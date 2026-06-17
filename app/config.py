@@ -46,6 +46,11 @@ class Settings(BaseSettings):
     # Retrieval ablation baseline flag (true = dense-only)
     dense_only: bool = False
 
+    # Hybrid retrieval (Phase 2)
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    hybrid_candidates: int = 50   # top-N pulled from each of dense + sparse
+    rerank_top: int = 30          # fused candidates passed to the cross-encoder
+
     @property
     def embedding_model(self) -> str:
         """The embedding model name for the active provider."""
