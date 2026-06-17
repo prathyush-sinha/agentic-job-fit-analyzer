@@ -1,4 +1,9 @@
-"""Schema management and chunk persistence for the pgvector store."""
+"""Schema management and chunk persistence for the pgvector store.
+
+Bulk-load recipe (important for a remote DB): create the table WITHOUT the HNSW
+index, stream rows in with COPY, then build the index once at the end. Inserting
+into a live HNSW index row-by-row over the network is orders of magnitude slower.
+"""
 
 from __future__ import annotations
 
@@ -8,7 +13,7 @@ from app.config import Settings, get_settings
 from app.db import to_vector_literal
 from ingest.models import Chunk
 
-_DDL = """
+_TABLE_DDL = """
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE IF NOT EXISTS chunks (
@@ -27,9 +32,12 @@ CREATE TABLE IF NOT EXISTS chunks (
 );
 
 CREATE INDEX IF NOT EXISTS chunks_posting_id_idx ON chunks (posting_id);
-CREATE INDEX IF NOT EXISTS chunks_embedding_hnsw
-    ON chunks USING hnsw (embedding vector_cosine_ops);
 """
+
+_COPY_COLS = (
+    "id, posting_id, source, company, title, location, url, "
+    "section, chunk_index, content, embedding"
+)
 
 _UPSERT = """
 INSERT INTO chunks
@@ -44,16 +52,43 @@ ON CONFLICT (id) DO UPDATE SET
 
 
 def create_schema(conn: psycopg.Connection, settings: Settings | None = None) -> None:
+    """Create the table + btree index. Does NOT build the vector index."""
     settings = settings or get_settings()
     with conn.cursor() as cur:
-        cur.execute(_DDL.format(dim=settings.embedding_dim))
+        cur.execute(_TABLE_DDL.format(dim=settings.embedding_dim))
     conn.commit()
+
+
+def create_vector_index(conn: psycopg.Connection) -> None:
+    """Build the HNSW cosine index. Call once, after bulk loading."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS chunks_embedding_hnsw "
+            "ON chunks USING hnsw (embedding vector_cosine_ops);"
+        )
+    conn.commit()
+
+
+def copy_chunks(
+    conn: psycopg.Connection, chunks: list[Chunk], embeddings: list[list[float]]
+) -> int:
+    """Fast bulk insert via COPY (use on a fresh table, no conflict handling)."""
+    if len(chunks) != len(embeddings):
+        raise ValueError("chunks and embeddings length mismatch")
+    with conn.cursor() as cur, cur.copy(f"COPY chunks ({_COPY_COLS}) FROM STDIN") as copy:
+        for c, emb in zip(chunks, embeddings):
+            copy.write_row((
+                c.id, c.posting_id, c.source, c.company, c.title, c.location, c.url,
+                c.section, c.chunk_index, c.content, to_vector_literal(emb),
+            ))
+    conn.commit()
+    return len(chunks)
 
 
 def upsert_chunks(
     conn: psycopg.Connection, chunks: list[Chunk], embeddings: list[list[float]]
 ) -> int:
-    """Insert/update a batch of chunks with their embeddings."""
+    """Insert/update a batch of chunks (slower; for incremental updates)."""
     if len(chunks) != len(embeddings):
         raise ValueError("chunks and embeddings length mismatch")
     rows = [

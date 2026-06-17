@@ -1,26 +1,28 @@
-"""Embeddings with a pluggable provider (Gemini default, OpenAI fallback).
+"""Embeddings with a pluggable provider: local (default), Gemini, or OpenAI.
 
-Both providers are batched with retries and token/cost accounting. Gemini uses
-asymmetric task types (RETRIEVAL_DOCUMENT for chunks, RETRIEVAL_QUERY for the
-resume query), which improves retrieval quality.
+Local runs a sentence-transformers model on CPU (free, no rate limits). Gemini
+and OpenAI are API providers, batched with retries and token/cost accounting;
+Gemini uses asymmetric task types (RETRIEVAL_DOCUMENT/RETRIEVAL_QUERY).
 """
 
 from __future__ import annotations
 
 import time
 from dataclasses import dataclass
+from functools import lru_cache
 
 from app.config import Settings, get_settings
 
 BATCH_SIZE = 100   # inputs per request (both providers accept >= this)
 MAX_RETRIES = 5
 
-# USD per 1M tokens for cost estimate. Gemini free tier = $0.
+# USD per 1M tokens for cost estimate. Local + Gemini free tier = $0.
 _PRICE_PER_1M = {
     "text-embedding-3-small": 0.02,
     "text-embedding-3-large": 0.13,
     "text-embedding-004": 0.0,
     "gemini-embedding-001": 0.0,
+    "BAAI/bge-small-en-v1.5": 0.0,
 }
 
 
@@ -127,6 +129,31 @@ def _embed_gemini(texts: list[str], settings: Settings, is_query: bool) -> Embed
     return EmbedResult(embeddings=embeddings, total_tokens=_approx_tokens(texts))
 
 
+# --- Local (sentence-transformers) ---------------------------------------
+
+# bge models want this instruction prefixed to queries (asymmetric retrieval).
+_BGE_QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
+
+
+@lru_cache(maxsize=2)
+def _st_model(name: str):
+    from sentence_transformers import SentenceTransformer
+
+    return SentenceTransformer(name)
+
+
+def _embed_local(texts: list[str], settings: Settings, is_query: bool) -> EmbedResult:
+    model = _st_model(settings.local_embedding_model)
+    prefix = _BGE_QUERY_PREFIX if (is_query and "bge" in settings.local_embedding_model.lower()) else ""
+    inputs = [prefix + t for t in texts]
+    vecs = model.encode(
+        inputs, normalize_embeddings=True, batch_size=64, show_progress_bar=False
+    )
+    return EmbedResult(
+        embeddings=[v.tolist() for v in vecs], total_tokens=_approx_tokens(texts)
+    )
+
+
 # --- public API -----------------------------------------------------------
 
 def embed_texts(
@@ -136,7 +163,9 @@ def embed_texts(
     settings = settings or get_settings()
     if settings.embedding_provider == "openai":
         return _embed_openai(texts, settings, is_query)
-    return _embed_gemini(texts, settings, is_query)
+    if settings.embedding_provider == "gemini":
+        return _embed_gemini(texts, settings, is_query)
+    return _embed_local(texts, settings, is_query)
 
 
 def embed_query(text: str, settings: Settings | None = None) -> list[float]:

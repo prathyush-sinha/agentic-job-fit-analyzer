@@ -16,7 +16,13 @@ from collections.abc import Callable
 from pathlib import Path
 
 from app.config import get_settings
-from app.retrieval import Hit, bm25_search, dense_search, hybrid_search
+from app.retrieval import (
+    Hit,
+    bm25_search,
+    dense_search,
+    hybrid_rrf_search,
+    hybrid_search,
+)
 from evals.gold import load_gold
 from evals.metrics import mrr, ndcg_at_k, precision_at_k, recall_at_k
 
@@ -40,6 +46,7 @@ def _systems(settings) -> dict[str, Callable[[str], list[Hit]]]:
     return {
         "dense-only": lambda q: dense_search(q, RETRIEVE_DEPTH, settings),
         "bm25-only": lambda q: bm25_search(q, RETRIEVE_DEPTH, settings),
+        "hybrid-rrf": lambda q: hybrid_rrf_search(q, RETRIEVE_DEPTH, settings),
         "hybrid+rerank": lambda q: hybrid_search(q, settings.rerank_top, settings),
     }
 

@@ -22,10 +22,16 @@ from ingest.chunk import (
 )
 from ingest.embed import embed_texts
 from ingest.models import Chunk
-from ingest.store import count_chunks, create_schema, upsert_chunks
+from ingest.store import (
+    copy_chunks,
+    count_chunks,
+    create_schema,
+    create_vector_index,
+    upsert_chunks,
+)
 
 DEFAULT_CORPUS = Path("data/raw/postings.jsonl")
-STORE_BATCH = 200  # chunks embedded+written per round
+STORE_BATCH = 500  # chunks embedded + bulk-copied per round
 
 
 def plan_chunks(
@@ -46,9 +52,10 @@ def plan_chunks(
     return planned
 
 
-def _flush(conn, settings, batch: list[Chunk]) -> tuple[int, int, float]:
+def _flush(conn, settings, batch: list[Chunk], bulk: bool) -> tuple[int, int, float]:
     result = embed_texts([c.content for c in batch], settings)
-    upsert_chunks(conn, batch, result.embeddings)
+    writer = copy_chunks if bulk else upsert_chunks
+    writer(conn, batch, result.embeddings)
     return len(batch), result.total_tokens, result.estimated_cost(settings.embedding_model)
 
 
@@ -69,13 +76,18 @@ def build(
                 cur.execute("DROP TABLE IF EXISTS chunks;")
             conn.commit()
         create_schema(conn, settings)
+        # Bulk COPY only when the table started empty; otherwise upsert.
+        bulk = count_chunks(conn) == 0
 
         for start in range(0, len(planned), STORE_BATCH):
             head = planned[start : start + STORE_BATCH]
-            n, t, c = _flush(conn, settings, head)
+            n, t, c = _flush(conn, settings, head, bulk)
             written += n; tokens += t; cost += c
-            print(f"  embedded+stored {written}/{len(planned)} chunks")
+            print(f"  embedded+stored {written}/{len(planned)} chunks "
+                  f"({time.time() - started:.0f}s)")
 
+        print("  building HNSW vector index...")
+        create_vector_index(conn)
         total = count_chunks(conn)
 
     return {
@@ -93,17 +105,18 @@ def build(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build the dense pgvector index")
     parser.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
-    parser.add_argument("--max-chunks", type=int, default=700,
-                        help="cap total chunks embedded (fits free-tier quota)")
-    parser.add_argument("--max-per-posting", type=int, default=2,
-                        help="cap high-signal chunks kept per posting")
+    parser.add_argument("--max-chunks", type=int, default=0,
+                        help="cap total chunks embedded; 0 = no cap (all)")
+    parser.add_argument("--max-per-posting", type=int, default=0,
+                        help="cap high-signal chunks per posting; 0 = no cap")
     parser.add_argument("--recreate", action="store_true", help="drop chunks table first")
     args = parser.parse_args()
 
+    max_chunks = args.max_chunks or None  # 0 -> None (no cap)
     print(f"Indexing {args.corpus} "
-          f"(max_chunks={args.max_chunks}, max_per_posting={args.max_per_posting}, "
+          f"(max_chunks={max_chunks}, max_per_posting={args.max_per_posting}, "
           f"recreate={args.recreate})")
-    stats = build(args.corpus, args.max_chunks, args.max_per_posting, args.recreate)
+    stats = build(args.corpus, max_chunks, args.max_per_posting, args.recreate)
     print("\n=== done ===")
     for k, v in stats.items():
         print(f"  {k:<18} {v}")

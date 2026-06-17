@@ -1,0 +1,21 @@
+Robert Kim — Engineering Manager
+Boston, MA
+
+SUMMARY
+Engineering manager with 9 years total experience, 4 leading teams of 6–12.
+
+EXPERIENCE
+Engineering Manager, ScaleCo (2021–present)
+- Led 2 backend teams; owned delivery, hiring, and career growth.
+- Set technical direction and roadmap with product partners.
+- Improved on-call health and deployment frequency.
+
+Tech Lead / Senior Engineer, SaaSCo (2015–2021)
+- Led architecture for core services; mentored engineers.
+
+SKILLS
+Engineering management, people management, team leadership, hiring, mentoring,
+technical strategy, roadmap, distributed systems, delivery, stakeholders.
+
+EDUCATION
+B.S. Computer Science

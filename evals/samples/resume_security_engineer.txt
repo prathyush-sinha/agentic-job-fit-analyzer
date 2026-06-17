@@ -1,0 +1,21 @@
+Nadia Hassan — Security Engineer
+Washington, DC
+
+SUMMARY
+Security engineer with 6 years in application and cloud security.
+
+EXPERIENCE
+Senior Security Engineer, FinTechCo (2020–present)
+- Led threat modeling, secure code review, and vulnerability management.
+- Built detection and response tooling; ran incident response.
+- Hardened cloud infrastructure (AWS) and CI/CD supply chain.
+
+Security Engineer, ConsultingCo (2017–2020)
+- Performed penetration testing and security assessments.
+
+SKILLS
+Application security, cloud security, AWS, threat modeling, vulnerability
+management, incident response, SIEM, detection, IAM, security engineering.
+
+EDUCATION
+B.S. Cybersecurity

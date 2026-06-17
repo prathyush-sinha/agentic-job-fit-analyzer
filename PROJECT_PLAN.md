@@ -17,7 +17,7 @@ Time estimates assume part-time solo work (evenings/weekends). Total: ~3–4 wee
 
 ### Phase 1 — RAG baseline (dense only) · ~2–3 days
 - [ ] Ingest postings → clean → chunk (by section: requirements / responsibilities / qualifications).
-- [ ] Embed chunks (Gemini embeddings, `gemini-embedding-001` truncated to 768-dim), store in pgvector. Note: Gemini's free tier is rate-limited (~100 req/min, ~1k/day), so the index is built over a diversified subset of the corpus, not all ~28K chunks.
+- [ ] Embed chunks (local `BAAI/bge-small-en-v1.5`, 384-dim — free, no rate limits), store in pgvector. Full corpus indexed (~28K chunks). Embeddings pluggable via `EMBEDDING_PROVIDER`; Gemini/OpenAI reachable but their free tiers are too rate-limited for bulk embedding.
 - [ ] Dense retrieval: embed a resume, cosine top-k over chunks.
 - [ ] Sanity-check retrieval manually on 5–10 resumes. **Commit.** This is your baseline.
 

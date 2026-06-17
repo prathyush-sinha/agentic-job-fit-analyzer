@@ -23,14 +23,18 @@ class Settings(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
-    # Active embedding provider: "gemini" (default, free tier) or "openai".
-    embedding_provider: str = "gemini"
+    # Active embedding provider: "local" (default, free, no limits), "gemini", or "openai".
+    embedding_provider: str = "local"
 
-    # Gemini (default) — free key from aistudio.google.com, no billing.
+    # Local (default) — runs on CPU via sentence-transformers, no API/quota.
+    local_embedding_model: str = "BAAI/bge-small-en-v1.5"
+    local_embedding_dim: int = 384
+
+    # Gemini — free key from aistudio.google.com, no billing. Rate-limited
+    # (~100 req/min, ~1k/day), so only practical for small corpora.
     google_api_key: str = ""
     gemini_embedding_model: str = "gemini-embedding-001"
-    # Native dim is 3072; we truncate (Matryoshka) to keep vectors small enough
-    # for the Neon free tier and faster to index.
+    # Native dim is 3072; we truncate (Matryoshka) to keep vectors small.
     gemini_output_dim: int = 768
 
     # OpenAI — reachable via EMBEDDING_PROVIDER=openai. Judge MUST differ from
@@ -56,14 +60,18 @@ class Settings(BaseSettings):
         """The embedding model name for the active provider."""
         if self.embedding_provider == "openai":
             return self.openai_embedding_model
-        return self.gemini_embedding_model
+        if self.embedding_provider == "gemini":
+            return self.gemini_embedding_model
+        return self.local_embedding_model
 
     @property
     def embedding_dim(self) -> int:
         """Vector dimension for the active embedding model."""
         if self.embedding_provider == "openai":
             return _OPENAI_EMBED_DIMS.get(self.openai_embedding_model, 1536)
-        return self.gemini_output_dim
+        if self.embedding_provider == "gemini":
+            return self.gemini_output_dim
+        return self.local_embedding_dim
 
     @property
     def redacted_database_url(self) -> str:

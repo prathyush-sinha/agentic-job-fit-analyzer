@@ -1,0 +1,21 @@
+Liam O'Connor — Site Reliability / DevOps Engineer
+Denver, CO
+
+SUMMARY
+SRE/DevOps engineer with 6 years keeping large-scale systems reliable.
+
+EXPERIENCE
+Senior SRE, CloudPlatform (2020–present)
+- Owned SLOs, on-call, and incident response for tier-1 services.
+- Built infrastructure-as-code (Terraform) and CI/CD; automated toil away.
+- Ran Kubernetes clusters and observability (Prometheus, Grafana).
+
+DevOps Engineer, HostingCo (2017–2020)
+- Automated provisioning and deploys across AWS.
+
+SKILLS
+Kubernetes, Terraform, AWS, GCP, CI/CD, Prometheus, Grafana, Linux,
+reliability, observability, incident response, infrastructure, DevOps, SRE.
+
+EDUCATION
+B.S. Information Systems

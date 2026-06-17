@@ -1,0 +1,20 @@
+Yuki Tanaka — Mobile Engineer (iOS)
+Los Angeles, CA
+
+SUMMARY
+Mobile engineer with 5 years building native iOS apps (also Android).
+
+EXPERIENCE
+Senior iOS Engineer, ConsumerApp (2021–present)
+- Owned core iOS features in Swift/SwiftUI; improved crash-free rate and startup.
+- Built offline sync and integrated REST APIs; led App Store releases.
+
+Mobile Engineer, StartupCo (2019–2021)
+- Built iOS and some Android (Kotlin) features.
+
+SKILLS
+Swift, SwiftUI, iOS, Objective-C, Kotlin, Android, mobile, REST, app performance,
+unit testing, mobile architecture.
+
+EDUCATION
+B.S. Computer Science

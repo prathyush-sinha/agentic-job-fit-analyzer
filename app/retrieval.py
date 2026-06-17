@@ -81,9 +81,8 @@ def rrf_fuse(rankings: list[list[str]], rrf_k: int = 60) -> list[tuple[str, floa
     return sorted(scores.items(), key=lambda t: t[1], reverse=True)
 
 
-def hybrid_search(query_text: str, k: int = 10, settings: Settings | None = None) -> list[Hit]:
-    """Dense + BM25 fused via RRF, then cross-encoder reranked to top-k."""
-    from app.rerank import rerank
+def hybrid_rrf_search(query_text: str, k: int = 10, settings: Settings | None = None) -> list[Hit]:
+    """Dense + BM25 fused via reciprocal rank fusion (no reranker)."""
     from app.sparse import get_sparse_index
 
     settings = settings or get_settings()
@@ -93,14 +92,22 @@ def hybrid_search(query_text: str, k: int = 10, settings: Settings | None = None
     sparse = get_sparse_index(settings)
     sparse_ids = [cid for cid, _ in sparse.search(query_text, n)]
 
-    fused = rrf_fuse([dense_ids, sparse_ids])[: settings.rerank_top]
-    candidates = [
+    fused = rrf_fuse([dense_ids, sparse_ids])[:k]
+    return [
         Hit(id=row["id"], posting_id=row["posting_id"], company=row["company"],
             title=row["title"], section=row["section"], url=row["url"],
             score=score, content=row["content"])
         for cid, score in fused
         if (row := sparse.rows.get(cid)) is not None
     ]
+
+
+def hybrid_search(query_text: str, k: int = 10, settings: Settings | None = None) -> list[Hit]:
+    """Dense + BM25 fused via RRF, then cross-encoder reranked to top-k."""
+    from app.rerank import rerank
+
+    settings = settings or get_settings()
+    candidates = hybrid_rrf_search(query_text, settings.rerank_top, settings)
     return rerank(query_text, candidates, k, settings)
 
 

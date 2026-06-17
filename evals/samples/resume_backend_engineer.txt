@@ -1,0 +1,21 @@
+Daniel Cho — Backend Software Engineer
+Seattle, WA
+
+SUMMARY
+Backend engineer with 6 years building scalable distributed services and APIs.
+
+EXPERIENCE
+Senior Software Engineer, PaymentsCo (2020–present)
+- Designed and operated high-throughput microservices (Go, Python) on Kubernetes.
+- Owned a payments API handling 10k req/s; led reliability and latency work.
+- Built event-driven pipelines (Kafka) and Postgres-backed services.
+
+Software Engineer, WebCo (2018–2020)
+- Built REST/gRPC services and CI/CD pipelines.
+
+SKILLS
+Python, Go, Java, distributed systems, microservices, REST, gRPC, Postgres,
+Kafka, Kubernetes, AWS, system design, backend.
+
+EDUCATION
+B.S. Computer Science

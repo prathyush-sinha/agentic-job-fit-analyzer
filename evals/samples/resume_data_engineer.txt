@@ -1,0 +1,21 @@
+Aarav Patel — Data Engineer
+Remote
+
+SUMMARY
+Data engineer with 5 years building batch and streaming data platforms.
+
+EXPERIENCE
+Senior Data Engineer, AnalyticsCo (2020–present)
+- Built and operated ELT pipelines (Spark, Airflow, dbt) over a data warehouse.
+- Designed streaming ingestion (Kafka) and dimensional models for analytics.
+- Owned data quality, lineage, and cost optimization on Snowflake.
+
+Data Engineer, RetailCo (2018–2020)
+- Built Python ETL into Postgres/Redshift; partnered with analysts.
+
+SKILLS
+Python, SQL, Spark, Airflow, dbt, Kafka, Snowflake, data warehouse, ETL/ELT,
+data modeling, pipelines, data engineering.
+
+EDUCATION
+B.S. Computer Engineering

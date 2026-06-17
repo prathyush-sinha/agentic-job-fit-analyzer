@@ -11,11 +11,11 @@ LangGraph state machine: planner -> retriever (RAG) -> analyzer -> critic/fact-c
 ## Stack
 - Python 3.11+
 - Postgres + pgvector for the vector store (hosted free Neon instance; `docker compose` config also provided)
-- Retrieval: dense (Gemini embeddings, `gemini-embedding-001` truncated to 768-dim) + BM25 (sparse), fused with reciprocal rank fusion, then a cross-encoder reranker
+- Retrieval: dense (local `BAAI/bge-small-en-v1.5` embeddings, 384-dim) + BM25 (sparse), fused with reciprocal rank fusion, then a cross-encoder reranker
 - Agent orchestration: LangGraph
 - Serving: FastAPI, containerized with Docker
 - LLM for agent nodes and the eval judge: Google Gemini API, free tier (e.g. `gemini-2.0-flash` for the agent, a different Gemini model for the judge). Model names come from env; the API key (`GOOGLE_API_KEY`) stays in env and is never hardcoded.
-- Provider is pluggable via `EMBEDDING_PROVIDER` (`gemini` default; `openai` reachable as a fallback). Gemini's free tier is rate-limited (~100 req/min, ~1k/day for embeddings), so the index is built over a diversified subset of the corpus.
+- Embeddings are pluggable via `EMBEDDING_PROVIDER` (`local` default — free, no rate limits, embeds the full corpus; `gemini` and `openai` reachable as fallbacks). Gemini's free tier is too rate-limited for bulk embedding, so the full ~28K-chunk index uses the local model.
 
 ## Conventions
 - Keep dense-only retrieval reachable behind a flag — it is the ablation baseline. Do not delete it.

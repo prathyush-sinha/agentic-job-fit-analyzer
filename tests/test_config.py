@@ -21,6 +21,10 @@ def test_judge_model_differs_from_agent_by_default():
 
 
 def test_embedding_provider_selects_model_and_dim():
+    local = Settings(embedding_provider="local")
+    assert local.embedding_model == "BAAI/bge-small-en-v1.5"
+    assert local.embedding_dim == 384
+
     gemini = Settings(embedding_provider="gemini")
     assert gemini.embedding_model == "gemini-embedding-001"
     assert gemini.embedding_dim == 768  # truncated from native 3072

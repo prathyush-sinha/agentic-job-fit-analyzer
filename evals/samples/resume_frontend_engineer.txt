@@ -1,0 +1,21 @@
+Emma Wright — Frontend Engineer
+Austin, TX
+
+SUMMARY
+Frontend engineer with 5 years building performant, accessible web apps.
+
+EXPERIENCE
+Senior Frontend Engineer, SaaSCo (2021–present)
+- Led a React/TypeScript codebase; improved Core Web Vitals and bundle size.
+- Built a component library and design-system integration used across teams.
+- Partnered with designers on complex, accessible UI.
+
+Frontend Engineer, MediaCo (2019–2021)
+- Built responsive single-page apps with React and Redux.
+
+SKILLS
+JavaScript, TypeScript, React, Next.js, HTML, CSS, web performance,
+accessibility, frontend, UI engineering, testing.
+
+EDUCATION
+B.S. Computer Science
