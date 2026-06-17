@@ -1,0 +1,27 @@
+# Agent orchestration
+langgraph
+langchain-core
+
+# LLM + embeddings (OpenAI for agent and judge)
+openai
+
+# Structured outputs / config
+pydantic
+pydantic-settings
+python-dotenv
+
+# Vector store (Postgres + pgvector)
+psycopg[binary]
+pgvector
+
+# Serving
+fastapi
+uvicorn[standard]
+
+# Testing
+pytest
+httpx  # required by fastapi TestClient
+
+# Deferred to their phases (add when implemented):
+#   Phase 2 sparse retrieval: rank-bm25
+#   Phase 2 reranker (heavyweight — confirm first): sentence-transformers / torch

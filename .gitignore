@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# Secrets
+.env
+
+# Data (raw scraped corpus — licensing unclear, do not commit)
+data/raw/
+
+# OS
+.DS_Store
