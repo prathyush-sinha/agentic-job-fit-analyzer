@@ -50,8 +50,9 @@ class Settings(BaseSettings):
     # Retrieval ablation baseline flag (true = dense-only)
     dense_only: bool = False
 
-    # Hybrid retrieval (Phase 2)
-    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    # Hybrid retrieval (Phase 2). bge-reranker-base (retrieval-domain) beat
+    # ms-marco-MiniLM in the ablation: NDCG@5 0.765 (dense) -> 0.860, at ~9x latency.
+    reranker_model: str = "BAAI/bge-reranker-base"
     hybrid_candidates: int = 50   # top-N pulled from each of dense + sparse
     rerank_top: int = 30          # fused candidates passed to the cross-encoder
 
