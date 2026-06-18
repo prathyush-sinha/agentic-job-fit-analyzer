@@ -1,85 +1,103 @@
 # Agentic Job-Fit Analyzer
 
-Given a resume and a target role, this service retrieves relevant job postings,
-analyzes fit with a self-correcting agent, and returns a **structured report** —
-matched skills, gaps (with concrete next steps), and tailored bullet rewrites.
+FastAPI app for comparing a resume against job postings for a target role.
 
-A portfolio project demonstrating three things: an **agent loop** (not just an LLM
-call), **RAG depth** (hybrid retrieval + reranking), and **eval discipline**
-(validated metrics, not vibes).
+The system retrieves similar postings, runs a LangGraph workflow, and returns a structured report with matched skills, likely gaps, suggested next steps, and resume-bullet rewrites.
 
-## Architecture
+See `docs/architecture.md` for the pipeline diagram and design notes.
 
-LangGraph state machine with a critic that loops back to the retriever when the
-draft analysis isn't grounded in retrieved evidence (capped at 2 retries):
+## What it does
 
-```mermaid
-flowchart LR
-  IN([resume + target role]) --> P[planner]
-  P --> R[retriever<br/>hybrid + rerank]
-  R --> AN[analyzer]
-  AN --> C{critic /<br/>fact-check}
-  C -- ungrounded &<br/>retries &lt; 2 --> R
-  C -- grounded --> S[synthesizer]
-  S --> OUT([FitReport])
-```
+- Scrapes job postings from public Greenhouse and Lever APIs.
+- Cleans and chunks posting text by section.
+- Indexes chunks in Postgres with pgvector.
+- Compares dense retrieval, BM25, hybrid RRF, and reranked retrieval.
+- Runs a planner, retriever, analyzer, critic, and synthesizer workflow.
+- Returns a structured `FitReport` from the `/analyze` endpoint.
 
-Every node returns a Pydantic model — no free-form text. The final `FitReport`
-carries a fit score, matched skills, gaps with next steps, bullet rewrites, and
-the evidence postings used.
+## Retrieval evaluation
 
-## Retrieval ablation (the headline result)
-
-Posting-level metrics over a 16-role gold set (3,049 relevance judgments) on the
-full corpus (~4,200 postings indexed). Relevance is defined by target-role title
-match — an objective, retrieval-independent proxy (see `evals/gold.py`).
+Posting-level metrics over a 16-role gold set with 3,049 relevance judgments. The corpus has about 4,200 indexed postings. Relevance is based on target-role title matching, so this is a retrieval benchmark rather than a full human evaluation of job fit.
 
 | system | NDCG@5 | NDCG@10 | P@5 | MRR | latency p50 |
-|---|---|---|---|---|---|
+|---|---:|---:|---:|---:|---:|
 | BM25-only | 0.664 | 0.680 | 0.675 | 0.763 | 1.8s |
-| dense-only (baseline) | 0.765 | 0.763 | 0.775 | 0.849 | 2.1s |
-| hybrid (dense + BM25, RRF) | 0.766 | 0.756 | 0.775 | 0.818 | 3.5s |
-| **hybrid + cross-encoder rerank** | **0.860** | **0.835** | **0.838** | **0.950** | 18.9s |
+| dense-only | 0.765 | 0.763 | 0.775 | 0.849 | 2.1s |
+| hybrid RRF | 0.766 | 0.756 | 0.775 | 0.818 | 3.5s |
+| hybrid + cross-encoder rerank | 0.860 | 0.835 | 0.838 | 0.950 | 18.9s |
 
-**Hybrid retrieval + reranking lifted NDCG@5 from 0.765 (dense baseline) to 0.860.**
-
-The eval harness also caught a regression: the first reranker tried
-(`ms-marco-MiniLM`, web-QA domain) *hurt* NDCG@5 (0.713); swapping to a
-retrieval-domain reranker (`bge-reranker-base`) produced the result above. Catching
-that is the point of measuring instead of assuming. Reproduce with
-`python -m evals.retrieval`.
+The best run uses dense retrieval + BM25, reciprocal-rank fusion, and a `BAAI/bge-reranker-base` cross-encoder. Dense-only retrieval is still available through `DENSE_ONLY=true` so the baseline can be rerun.
 
 ## Stack
 
-- **Python 3.11+**, **FastAPI**
-- **Postgres + pgvector** (hosted free Neon; `docker-compose.yml` also provided)
-- **Embeddings**: local `BAAI/bge-small-en-v1.5` (384-dim) by default — free, no
-  rate limits. Pluggable via `EMBEDDING_PROVIDER` (`gemini`, `openai` reachable).
-- **Retrieval**: dense (pgvector cosine) + BM25 (`rank-bm25`), reciprocal rank
-  fusion, then a `bge-reranker-base` cross-encoder. Dense-only stays reachable via
-  `DENSE_ONLY=true` (the ablation baseline).
-- **Agent**: LangGraph; **Google Gemini** (`gemini-2.5-flash`) for the nodes.
-- **Corpus**: job postings from public ATS APIs (Greenhouse + Lever).
+- Python 3.11, FastAPI, Pydantic
+- LangGraph
+- Postgres + pgvector
+- `rank-bm25`
+- `BAAI/bge-small-en-v1.5` embeddings by default
+- `BAAI/bge-reranker-base` for reranking
+- Google Gemini for the graph nodes
 
 ## Quickstart
 
 ```bash
 python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env                                  # set GOOGLE_API_KEY, DATABASE_URL
-python -m ingest.scrape                               # collect postings -> data/raw/
-python -m ingest.index --recreate                     # chunk + embed + index (local, free)
-uvicorn app.main:app --reload                         # serve
+cp .env.example .env                                  # set GOOGLE_API_KEY and DATABASE_URL
+python -m ingest.scrape
+python -m ingest.index --recreate
+uvicorn app.main:app --reload
 ```
 
-### Analyze a resume
+## Analyze a resume
 
 ```bash
 curl -s localhost:8000/analyze -H 'content-type: application/json' \
-  -d '{"resume": "<resume text>", "target_role": "Machine Learning Engineer"}'
+  -d '{"resume": "Built a RAG pipeline with FastAPI, Postgres, pgvector, and retrieval evals.", "target_role": "Machine Learning Engineer"}'
 ```
 
-Returns `{ "report": FitReport, "meta": { retries, llm_tokens, evidence_count, latency_s } }`.
+Example response shape:
+
+```json
+{
+  "report": {
+    "target_role": "Machine Learning Engineer",
+    "overall_fit": "The resume shows relevant retrieval and backend experience, especially around RAG, FastAPI, and vector search. The main gaps are broader model training experience and production deployment evidence.",
+    "fit_score": 72,
+    "matched_skills": [
+      {
+        "skill": "RAG and vector search",
+        "resume_evidence": "Built a RAG pipeline with Postgres and pgvector.",
+        "posting_evidence": "Retrieved postings mention retrieval systems, embeddings, and vector databases."
+      }
+    ],
+    "gaps": [
+      {
+        "requirement": "Production ML deployment",
+        "why_it_matters": "Several postings expect shipped ML systems or production monitoring.",
+        "posting_evidence": "Retrieved postings mention deployment, monitoring, and reliability requirements.",
+        "suggested_next_step": "Add a deployment section with latency, logging, and error-handling details."
+      }
+    ],
+    "bullet_rewrites": [
+      {
+        "original": "Built a RAG pipeline.",
+        "rewritten": "Built a RAG pipeline using FastAPI, Postgres/pgvector, and retrieval evaluation to compare dense, BM25, hybrid, and reranked search.",
+        "rationale": "Adds stack, evaluation scope, and role-relevant detail."
+      }
+    ],
+    "evidence_used": ["Example Company — Machine Learning Engineer"]
+  },
+  "meta": {
+    "retries": 1,
+    "llm_tokens": 4200,
+    "evidence_count": 6,
+    "latency_s": 84.7
+  }
+}
+```
+
+Actual output depends on the indexed postings and the resume text.
 
 ## Commands
 
@@ -89,22 +107,13 @@ Returns `{ "report": FitReport, "meta": { retries, llm_tokens, evidence_count, l
 | Run tests | `pytest` |
 | Scrape corpus | `python -m ingest.scrape` |
 | Build index | `python -m ingest.index --recreate` |
-| Verify DB + pgvector | `python -m app.db` |
-| Retrieval ablation | `python -m evals.retrieval` |
+| Check DB + pgvector | `python -m app.db` |
+| Run retrieval eval | `python -m evals.retrieval` |
 
-## Status & honest caveats
+## Status
 
-Phases 0–4 and 6 are complete (33 tests passing). Known limitations, kept visible
-rather than hidden:
-
-- **Generation eval (Phase 5) not done.** The retrieval ablation above is validated;
-  the LLM-as-judge for the *generated report* (faithfulness/relevance/actionability)
-  and its human-κ validation are **future work** — there is intentionally no κ number
-  to avoid reporting an unvalidated one.
-- **Gold-set relevance is a title-match proxy**, not human judgment — fine for
-  comparing retrievers, but not a substitute for human labels.
-- **Latency**: a full `/analyze` run is ~1–2.5 min (the reranker is ~19s on CPU and
-  the agent makes several Gemini calls, sometimes with a retry). Tunable via fewer
-  rerank candidates, a smaller reranker, or GPU.
-- **Index coverage**: ~4,200 of 4,500 postings (a re-index was interrupted at 94%;
-  ample for the eval).
+- Ingestion, indexing, retrieval, reranking, graph workflow, and API endpoint are implemented.
+- Current test suite: 33 passing tests.
+- Retrieval evaluation is measured; report-quality evaluation still needs human checking.
+- Full `/analyze` runs can take around 1-2.5 minutes on CPU because reranking and multiple graph-node calls are in the loop.
+- Current index covers about 4,200 of roughly 4,500 scraped postings from the last indexing run.
